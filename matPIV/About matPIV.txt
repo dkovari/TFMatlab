@@ -1,0 +1,4 @@
+matPIV is a simplified PIV (Particle Image Velocimetry) library for MATLAB.
+Local image displacements are calculated using image cross-correlation.
+
+Usage:
