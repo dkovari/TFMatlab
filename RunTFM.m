@@ -1,6 +1,6 @@
-Path = '/Volumes/External 1.5TB/Wenbin/explant/20161202explant/control/';
-File = 'sample002.nd2';
-RefFile = 'sample002sds.nd2';
+Path = 'C:\Users\dkovari\Desktop\explant\20161202explant\control';
+File = 'sample001.nd2';
+RefFile = 'sample001sds.nd2';
 [~,name,~] = fileparts(File);
 OutDir = fullfile(Path,name);
 mkdir(OutDir);

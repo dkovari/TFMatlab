@@ -40,8 +40,8 @@ dH = TFMdata.dy/TFMdata.PX_SCALE;
 
 %Convert SMAG stack to anim struct
 olAnim(size(TFMdata.SMAG,3)) = struct('AlphaData',[],'XData',[],'YData',[]);
-[olAnim.XData] = deal([dW/2, dW*size(TFMdata.SMAG,2)-dW/2]);
-[olAnim.YData] = deal([dH/2, dH*size(TFMdata.SMAG,1)-dH/2]);
+[olAnim.XData] = deal([dW/2, dW*(size(TFMdata.SMAG,2)-1)-dW/2]);
+[olAnim.YData] = deal([dH/2, dH*(size(TFMdata.SMAG,1)-1)-dH/2]);
 for n=1:size(TFMdata.SMAG,3)
     olAnim(n).AlphaData = TFMdata.SMAG(:,:,n);
 end
@@ -51,9 +51,10 @@ end
     'OverlayColor',[1,0,0],...
     'CLim',p.Results.CellImageCLim,...
     'ALim',p.Results.SMAGLim,...
-    'colormap',gray(256),...
+    'colormap',gray(512),...
     'frameupdate_fn',@FrameChange);
 ylabel(hCB,'|Stress| [Pa]');
+set(hAx,'XColor','none','YColor','none');
 %% Draw Quivers and pointers
 hold(hAx,'on');
 %hCnt = plot(hAx,TFMdata.cnt{1}(:,1), TFMdata.cnt{1}(:,2),'+k','markersize',10);
@@ -62,7 +63,8 @@ if p.Results.PlotDisplacements
                 reshape(TFMdata.Vyy+dH/2,[],1),...
                 reshape(TFMdata.Vqx(:,:,1),[],1),...
                 reshape(TFMdata.Vqx(:,:,1),[],1),...
-                0,'-y');
+                0,'-','color',[255,215,0]/255);
+    legend(hAx,hQvr,'Strain');
 end
 %% Create TimeStamp & Scalebar
 TIME_FONT_SIZE = 26;

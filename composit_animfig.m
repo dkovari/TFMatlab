@@ -89,6 +89,8 @@ addParameter(p,'AlphaDataMapping','none');
 addParameter(p,'CustomColorbar',{});
 addParameter(p,'ShowColorbar',false,@(x) islogical(x)&&isscalar(x));
 addParameter(p,'ColorbarWidth',12,@(x) isscalar(x)&&isnumeric(x));
+addParameter(p,'PreSaveFcn',[]);
+addParameter(p,'PostSaveFcn',[]);
 
 %% Validate/convert inputs
 FDnames = {'CData','colormap','CDataMapping','XData','YData','AlphaData','AlphaDataMapping'};
@@ -114,11 +116,12 @@ else
     hFig = figure();
 end
 
-if isnumeric(p.Results.CLim)
-    defaultCDataMapping = 'direct';
-else
-    defaultCDataMapping = p.Results.CLim;
-end
+defaultCDataMapping = p.Results.CLim;
+% if isnumeric(p.Results.CLim)
+%     defaultCDataMapping = 'scaled';
+% else
+%     defaultCDataMapping = p.Results.CLim;
+% end
 
 defaultAlphaData = p.Results.AlphaData;
 defaultAlphaDataMapping = p.Results.AlphaDataMapping;
@@ -339,6 +342,9 @@ set(hFig,'SizeChangedFcn',@ReSzFig);
 %% Add Animation Menu
 uimenu(hFig,'Label','Save Movie','Callback',@(~,~) AnimateFigure(hFig));
 
+setappdata(hFig,'PreSaveFcn',p.Results.PreSaveFcn);
+setappdata(hFig,'PostSaveFcn',p.Results.PostSaveFcn);
+
 ReSzFig(hFig);
 
 setappdata(hFig,'ExecuteMovie_Fn',@(fp) AnimateFigure(hFig,fp));
@@ -453,6 +459,13 @@ end
 end
 
 function AnimateFigure(hFig, movfilepath)
+
+PreSaveFcn = getappdata(hFig,'PreSaveFcn');
+
+if ~isempty(PreSaveFcn)
+    PreSaveFcn();
+end
+
 if nargin<2
     [mov_file, mov_path] = uiputfile('*.mp4','Save Animation?');
 
@@ -537,5 +550,10 @@ setappdata(hFig,'hSld_Frame',hSld_Frame);
 setappdata(hFig,'hEdt_Frame',hEdt_Frame);
 setappdata(hFig,'hTxt_Frame',hTxt_Frame);
 ReSzFig(hFig);
+
+PostSaveFcn = getappdata(hFig,'PostSaveFcn');
+if ~isempty(PostSaveFcn)
+    PostSaveFcn();
+end
 
 end

@@ -3,7 +3,76 @@ function TFMdata = CalculateTFM_piv(varargin)
 % 
 % Optional Arguments:
 %   'FilePath',string: Specify the ND2 file that should be loaded.
-
+% 	'SeriesNum',[]);
+% 	'CellChan',[]);
+% 	'BeadChan',[]);
+% 	'X_CROP',[]);
+%     'Y_CROP',[]);
+% 
+% 	'Reference',[]); %file or "same"
+% 	'RefSeries',[]);
+% 	'RefChan',[]);
+% 	'RefFrame',[]);
+% 
+% 	'bpass_lnoise',[]);
+% 	'bpass_sz',[]);
+% 	'pkfnd_sz',[]);
+% 	,'pkfnd_th',[]);
+% 
+% 	'YoungE',[]);
+% 	'PoissonV',[]);
+% 
+% 	'SavePath',[]);
+% 	'SaveResults',true);
+% 
+% 	'BeadMoviePath',[]);
+% 	'ForceMoviePath',[]);
+% 
+% 	'RelativeDisplacementOnly',false);
+% 	'MaxDisplacement',20);
+%
+% Output:
+%   Unless directed not to save the data, the results are saved to a file
+%   specified by 'SavePath' or the user file selection prompt. The
+%   resulting matfile contains a struct:
+%   TFMdata
+%     TFMdata.Iref = Reference bead image used
+%     TFMdata.bpass_lnoise = size of noise used for filtering
+%     TFMdata.bpass_sz = particle size used for filtering
+%     TFMdata.cnt_sz = particle size used for identifying particles
+%     TFMdata.pkfnd_sz = particle size used for peak detection
+%     TFMdata.pkfnd_th = intensity min used for peak detection
+%     TFMdata.rF = reference frame number
+%     TFMdata.nF = number of frames
+%     TFMdata.RefFile = file used for reference
+%     TFMdata.ImageFile = file containing original image data
+%     TFMdata.SeriesNum = series used
+%     TFMdata.BeadChan = channel used for bead images
+%     TFMdata.CellChan = channel used for cell images
+%     TFMdata.Ostack = cell images in a 3-d stack
+%     TFMdata.imstack = bead images in a 3d stack
+%     TFMdata.Bstack = filtered bead images in a 3d stack
+%     TFMdata.Time = timepoints for each frame
+%     TFMdata.Y_CROP = crop used on original data [1st,last]
+%     TFMdata.X_CROP = crop used on original data [1st,last]
+%     TFMdata.cnt = cell array listig parcle centers (only first cell
+%                   contains data
+%     TFMdata.Vxx = location of displacement vectors along x
+%     TFMdata.Vyy = location of displacement vectors along y
+%     TFMdata.Vqx = x-value of displacement vectors
+%     TFMdata.Vqy = y-value of displecement
+%     TFMdata.SF = StressField;
+%     TFMdata.dx = width of displacement/stress field windows in m
+%     TFMdata.dy = height of displacement/stress field windows in m
+%     TFMdata.dH = height of windows in pixels
+%     TFMdata.dW = width of windoes in pixels
+%     TFMdata.E = Youngs modulus of gel
+%     TFMdata.v = Poisson's ration of gel
+%     TFMdata.PX_SCALE = pixel scale (um/px)
+%     TFMdata.SMAG = magnitude of stress for each window
+%     TFMdata.SED = StrainEnergyDensity;
+%     TFMdata.StrainEnergy = StrainEnergy, scalar total energy exerted
+    
 %% Parse Inputs
 p = inputParser;
 p.CaseSensitive = false;
@@ -35,6 +104,9 @@ addParameter(p,'ForceMoviePath',[]);
 
 addParameter(p,'RelativeDisplacementOnly',false);
 addParameter(p,'MaxDisplacement',20);
+
+addParameter(p,'SaveSE',true);
+
 
 parse(p,varargin{:});
 
@@ -591,17 +663,7 @@ PKS = pkfnd(Iref,pkfnd_th, pkfnd_sz);
 c = cntrd(Iref,PKS,cnt_sz);
 c(isnan(c(:,1)),:) = [];
 cnt{1} = c(:,1:2);
-% remaining cnt{} are the image frames
-% for f = 1:nF
-%     PKS = pkfnd(Bstack(:,:,f),pkfnd_th, pkfnd_sz);
-%     
-% 
-%     c = cntrd(Bstack(:,:,f),PKS,cnt_sz);
-%     c(isnan(c(:,1)),:) = [];
-%     
-%     cnt{f+1} = c(:,1:2);
-%     waitbar(f/nF,hWait);
-% end
+
 try
 close(hWait);
 catch
@@ -637,7 +699,9 @@ Ncounts = Ncounts(:,1:end-1)+Ncounts(:,2:end);
 DataMissing = (Ncounts==0);
 
 hWait = waitbar(0,'Computing PIV and correcting missing displacements');
-for f=1:nF
+parpool(feature('numCores'));
+
+parfor f=1:nF
     [vqx,vqy] = piv_rec(Iref,Bstack(:,:,f),'startW',dW2*2,'startH',dH2*2,'endW',dW2,'endH',dH2);
     
     %filter out errors, typically caused by missing beads
@@ -666,7 +730,6 @@ try
 close(hDlg);
 catch
 end
-
 
 %% Prompt for Young's Modulous and Poisson's Ratio
 persistent YoungE;
@@ -737,10 +800,6 @@ for f=1:nF
     StrainEnergyDensity(:,:,f) = PX_SCALE*0.5*real(StressField(:,:,1,f).*Vqx(:,:,f)+StressField(:,:,2,f).*Vqy(:,:,f));
     StrainEnergy(f) = sum(sum(StrainEnergyDensity(:,:,f)))*dx*dy;
 end
-figure(1);
-clf;
-plot(1:nF,StrainEnergy,'-r');
-title('Strain Energy');
 
 %% Store Data in struct
 if ~USE_CELL_IMAGE
@@ -788,8 +847,6 @@ TFMdata.SMAG = Stress_mag;
 TFMdata.SED = StrainEnergyDensity;
 TFMdata.StrainEnergy = StrainEnergy;
 
-
-
 %% Save Data
 if p.Results.SaveResults
     [~,name,~] = fileparts(File);
@@ -812,6 +869,18 @@ if p.Results.SaveResults
     end   
 end
 
+%% Plot SE
+if p.Results.SaveResults && p.Results.SaveSE
+    hSE = figure();
+    plot((TFMdata.Time-TFMdata.Time(1))/60,StrainEnergy,'-r');
+    title('Strain Energy');
+    ylabel('Strain Energy []');
+    xlabel('Time [min]');
+    
+    [~,f,~] = fileparts(dat_file);
+    saveas(hSE,fullfile(dat_path,[f,'_StrainEnergy.fig']));
+    close(hSE);
+end
 %% View TFM Data
 % if isempty(p.Results.BeadMoviePath)
 %     TFMBeadViewer(TFMdata);
@@ -823,6 +892,7 @@ if isempty(p.Results.ForceMoviePath)
 else
     TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath);
 end
+
 %% Clear data if no output
 if nargout<1
     clear TFMdata;

@@ -62,7 +62,6 @@ if isnumeric(Over)
 end
 
 %% Data is struct, add color information
-
 if ~isfield(Over,'AlphaData')
     error('If specifying Over as a struct, it must contain AlphaData')
 end
@@ -104,7 +103,9 @@ AExt = [min(Alow),max(Ahigh)];
                             'Figure',p.Results.Figure,...
                             'frameupdate_fn',@FrameUpdateFcn,...
                             'ShowColorbar',true,...
-                            'ColorbarWidth',15);
+                            'ColorbarWidth',15,...
+                            'PreSaveFcn',@PreSaveAnim,...
+                            'PostSaveFcn',@PostSaveAnim);
 %% Setup ALim
 if isnumeric(ALim)
     set(hAx,'ALim',ALim);
@@ -142,6 +143,8 @@ AL = get(hAx,'ALim');
 hL_low = plot(hCB,[0,XLIM(2)],[AL(1),AL(1)],':k','linewidth',3);
 hL_up = plot(hCB,[0,XLIM(2)],[AL(2),AL(2)],':k','linewidth',3);
 
+set(hCB,'ALim',AL);
+
 set(hL_low,'ButtonDownFcn',@(h,~) LowBtnDwn(h,hCB,hAx,hImCB));
 set(hL_up,'ButtonDownFcn',@(h,~) UpBtnDwn(h,hCB,hAx,hImCB));
 
@@ -165,6 +168,20 @@ xlabel(hCB,'Log_{10}(Count)');
         if ~isempty(p.Results.frameupdate_fn)
             p.Results.frameupdate_fn(hF,getappdata(hF,'hAx'),cF)
         end
+    end
+
+    function PreSaveAnim()
+        ylim(hCB,get(hAx,'ALim'));
+        set(hHistLine,'visible','off');
+        set(hL_low,'visible','off');
+        set(hL_up,'visible','off');
+    end
+    function PostSaveAnim()
+        ylim(hCB,AExt);
+        set(hHistLine,'visible','on');
+        set(hL_low,'visible','on');
+        set(hL_up,'visible','on');
+        
     end
 end
 
