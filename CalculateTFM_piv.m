@@ -106,6 +106,9 @@ addParameter(p,'RelativeDisplacementOnly',false);
 addParameter(p,'MaxDisplacement',20);
 
 addParameter(p,'SaveSE',true);
+addParameter(p,'CellImageCLim','average');
+addParameter(p,'SMAGLim','global');
+addParameter(p,'PlotDisplacements',true);
 
 
 parse(p,varargin{:});
@@ -699,8 +702,13 @@ Ncounts = Ncounts(:,1:end-1)+Ncounts(:,2:end);
 DataMissing = (Ncounts==0);
 
 hWait = waitbar(0,'Computing PIV and correcting missing displacements');
-parpool(feature('numCores'));
 
+%delete(gcp('nocreate'))
+try
+parpool(feature('numCores'));
+catch
+end
+parfor_progress(nF);
 parfor f=1:nF
     [vqx,vqy] = piv_rec(Iref,Bstack(:,:,f),'startW',dW2*2,'startH',dH2*2,'endW',dW2,'endH',dH2);
     
@@ -719,8 +727,11 @@ parfor f=1:nF
     Vqx(:,:,f) = vqx-nanmean(vqx(~DataMissing));
     Vqy(:,:,f) = vqy-nanmean(vqy(~DataMissing));
     
-    waitbar(f/nF,hWait);
+    %fprintf('Finished %d/%d\n',f,nF);
+    %waitbar(f/nF,hWait);
+    parfor_progress;
 end
+parfor_progress(0);
 try
 close(hWait);
 catch
@@ -888,9 +899,9 @@ end
 %     TFMBeadViewer(TFMdata,'MoviePath',p.Results.BeadMoviePath);
 % end
 if isempty(p.Results.ForceMoviePath)
-    TFMForceViewer(TFMdata);
+    TFMForceViewer(TFMdata,'CellImageCLim',p.Results.CellImageCLim,'SMAGLim',p.Results.SMAGLim,'PlotDisplacements',p.Results.PlotDisplacements);
 else
-    TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath);
+    TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath,'CellImageCLim',p.Results.CellImageCLim,'SMAGLim',p.Results.SMAGLim,'PlotDisplacements',p.Results.PlotDisplacements);
 end
 
 %% Clear data if no output
