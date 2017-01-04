@@ -34,7 +34,7 @@ function TFMdata = CalculateTFM_piv(varargin)
 % 	'SaveSE',true/false: save plot of Strain Energy
 % 	'CellImageCLim','average'/'global',[low,high]
 % 	'SMAGLim','global'/'average',[low,high]
-% 	'PlotDisplacements',true/false
+% 	'PlotStrain',true/false
 %
 % Output:
 %   Unless directed not to save the data, the results are saved to a file
@@ -113,7 +113,7 @@ addParameter(p,'MaxDisplacement',20);
 addParameter(p,'SaveSE',true);
 addParameter(p,'CellImageCLim','average');
 addParameter(p,'SMAGLim','global');
-addParameter(p,'PlotDisplacements',true);
+addParameter(p,'PlotStrain',true);
 
 
 parse(p,varargin{:});
@@ -904,9 +904,9 @@ end
 %     TFMBeadViewer(TFMdata,'MoviePath',p.Results.BeadMoviePath);
 % end
 if isempty(p.Results.ForceMoviePath)
-    TFMForceViewer(TFMdata,'CellImageCLim',p.Results.CellImageCLim,'SMAGLim',p.Results.SMAGLim,'PlotDisplacements',p.Results.PlotDisplacements);
+    TFMForceViewer(TFMdata,'CellImageCLim',p.Results.CellImageCLim,'SMAGLim',p.Results.SMAGLim,'PlotStrain',p.Results.PlotStrain,'FigureSize',[1080,720]);
 else
-    TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath,'CellImageCLim',p.Results.CellImageCLim,'SMAGLim',p.Results.SMAGLim,'PlotDisplacements',p.Results.PlotDisplacements);
+    TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath,'CellImageCLim',p.Results.CellImageCLim,'SMAGLim',p.Results.SMAGLim,'PlotStrain',p.Results.PlotStrain,'FigureSize',[1080,720]);
 end
 
 %% Clear data if no output

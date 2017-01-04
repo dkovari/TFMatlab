@@ -103,7 +103,7 @@ AExt = [min(Alow),max(Ahigh)];
                             'Figure',p.Results.Figure,...
                             'frameupdate_fn',@FrameUpdateFcn,...
                             'ShowColorbar',true,...
-                            'ColorbarWidth',15,...
+                            'ColorbarWidth',20,...
                             'PreSaveFcn',@PreSaveAnim,...
                             'PostSaveFcn',@PostSaveAnim);
 %% Setup ALim
@@ -175,13 +175,15 @@ xlabel(hCB,'Log_{10}(Count)');
         set(hHistLine,'visible','off');
         set(hL_low,'visible','off');
         set(hL_up,'visible','off');
+        xlabel(hCB,'Log_{10}(Count)');
+        delete(hCB.XLabel);
     end
     function PostSaveAnim()
         ylim(hCB,AExt);
         set(hHistLine,'visible','on');
         set(hL_low,'visible','on');
         set(hL_up,'visible','on');
-        
+        xlabel(hCB,'Log_{10}(Count)');
     end
 end
 

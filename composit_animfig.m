@@ -292,22 +292,40 @@ for f = 1:numel(FrameData)
                         FrameData{f}(n).CDataMapping = [nanmean([FrameData{f}.Ilow]),nanmean([FrameData{f}.Ihigh])];
                 end
             end
-            %convert to RGB
-            if ischar(FrameData{f}(n).CDataMapping) %still direct
-                FrameData{f}(n).CData = ind2rgb(FrameData{f}(n).CData,cmap);
-            else %use numeric clim
-                FrameData{f}(n).CData = ind2rgb(gray2ind(mat2gray(FrameData{f}(n).CData,FrameData{f}(n).CDataMapping),size(cmap,1)),cmap);
+            %convert to RGB for all except first image
+            if f~=1
+                if ischar(FrameData{f}(n).CDataMapping) %still direct
+                    FrameData{f}(n).CData = ind2rgb(FrameData{f}(n).CData,cmap);
+                else %use numeric clim
+                    FrameData{f}(n).CData = ind2rgb(gray2ind(mat2gray(FrameData{f}(n).CData,FrameData{f}(n).CDataMapping),size(cmap,1)),cmap);
+                end
             end
         end
     end
-    FrameData{f} = rmfield(FrameData{f},{'colormap','CDataMapping','Ilow','Ihigh'});
+    if f~=1
+        FrameData{f} = rmfield(FrameData{f},{'colormap','CDataMapping','Ilow','Ihigh'});
+    end
 end
+
 
 %% Draw Images
 nImages = numel(FrameData);
 hImages = gobjects(nImages,1);
 hold(hAx,'on');
-for n=1:nImages
+
+%first image is special case since it is not necessarily RGB
+hImages(1) = image(hAx,'CData',FrameData{1}(1).CData,...
+    'XData',FrameData{1}(1).XData,...
+    'YData',FrameData{1}(1).YData,...
+    'AlphaData',FrameData{1}(1).AlphaData,...
+    'AlphaDataMapping',FrameData{1}(1).AlphaDataMapping,...
+    'CDataMapping','scaled');
+if ~ischar(FrameData{1}(1).CDataMapping)
+    set(hAx,'CLim',FrameData{1}(1).CDataMapping);
+end
+colormap(hAx,FrameData{1}(1).colormap);
+
+for n=2:nImages
     hImages(n) = image(hAx,'CData',FrameData{n}(1).CData);
     set(hImages(n),FrameData{n}(1));
 end
@@ -434,7 +452,24 @@ FrameData = getappdata(hFig,'FrameData');
 hold(hAx,'on');
 for n=1:nImages
     if numel(FrameData{n})>=cF
-        set(hImages(n),FrameData{n}(cF));
+        if n==1
+            set(hImages(n),'CData',FrameData{n}(cF).CData,...
+                'XData',FrameData{n}(cF).XData,...
+                'YData',FrameData{n}(cF).YData,...
+                'AlphaData',FrameData{n}(cF).AlphaData,...
+                'AlphaDataMapping',FrameData{n}(cF).AlphaDataMapping,...
+                'CDataMapping','scaled');
+            colormap(hAx,FrameData{n}(cF).colormap);
+            if ~ischar(FrameData{n}(cF).CDataMapping)
+                %'here'
+                %disp(FrameData{n}(cF).CDataMapping)
+                %figure(2);imagesc(FrameData{n}(cF).CData)
+                set(hAx,'CLim',FrameData{n}(cF).CDataMapping);
+                %disp(hAx.CLim)
+            end
+        else
+            set(hImages(n),FrameData{n}(cF));
+        end
         set(hImages(n),'Visible','on');
     else
         set(hImages(n),'Visible','off');
@@ -477,7 +512,6 @@ else
     mov_file = [mov_file,ext];
 end
 
-
 %% Delete Slider and frame counter
 delete(getappdata(hFig,'hSld_Frame'));
 delete(getappdata(hFig,'hEdt_Frame'));
@@ -515,6 +549,7 @@ end
 %% Save Movie
 writerObj = VideoWriter(fullfile(mov_path,mov_file),'MPEG-4');
 writerObj.FrameRate = 5;
+writerObj.Quality = 100;
 open(writerObj);
 writeVideo(writerObj,Anim);
 close(writerObj);
