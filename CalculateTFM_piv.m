@@ -3,33 +3,38 @@ function TFMdata = CalculateTFM_piv(varargin)
 % 
 % Optional Arguments:
 %   'FilePath',string: Specify the ND2 file that should be loaded.
-% 	'SeriesNum',[]);
-% 	'CellChan',[]);
-% 	'BeadChan',[]);
-% 	'X_CROP',[]);
-%     'Y_CROP',[]);
+% 	'SeriesNum',int
+% 	'CellChan',int
+% 	'BeadChan',int
+% 	'X_CROP',[int x1, int x2]
+%     'Y_CROP',[int y1, int y2]
 % 
-% 	'Reference',[]); %file or "same"
-% 	'RefSeries',[]);
-% 	'RefChan',[]);
-% 	'RefFrame',[]);
+% 	'Reference','PATH TO FILE' or 'same'
+% 	'RefSeries',int
+% 	'RefChan',int
+% 	'RefFrame',int
 % 
-% 	'bpass_lnoise',[]);
-% 	'bpass_sz',[]);
-% 	'pkfnd_sz',[]);
-% 	,'pkfnd_th',[]);
+% 	'bpass_lnoise',int
+% 	'bpass_sz',int
+% 	'pkfnd_sz',int
+% 	,'pkfnd_th',double
 % 
-% 	'YoungE',[]);
-% 	'PoissonV',[]);
+% 	'YoungE',double
+% 	'PoissonV',double
 % 
-% 	'SavePath',[]);
-% 	'SaveResults',true);
+% 	'SavePath','PATH TO OUTPUT'
+% 	'SaveResults',true/false
 % 
-% 	'BeadMoviePath',[]);
-% 	'ForceMoviePath',[]);
+% 	'BeadMoviePath','PATH TO MOVIE'
+% 	'ForceMoviePath','PATH TO MOVIE'
 % 
-% 	'RelativeDisplacementOnly',false);
-% 	'MaxDisplacement',20);
+% 	'RelativeDisplacementOnly',false/true
+% 	'MaxDisplacement',int
+%
+% 	'SaveSE',true/false: save plot of Strain Energy
+% 	'CellImageCLim','average'/'global',[low,high]
+% 	'SMAGLim','global'/'average',[low,high]
+% 	'PlotDisplacements',true/false
 %
 % Output:
 %   Unless directed not to save the data, the results are saved to a file
