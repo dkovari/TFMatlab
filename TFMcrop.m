@@ -69,8 +69,8 @@ TFMdata2.Vqx = bsxfun(@times,TFMdata.Vqx,PolyMaskV);
 TFMdata2.Vqy = bsxfun(@times,TFMdata.Vqy,PolyMaskV);
 
 %% Prompt to recalc stress
-answer = questdlg('Do you want to recalculate the stress field?','Recalculate?','yes','no','yes');
-if strcmp(answer,'yes')
+% answer = questdlg('Do you want to recalculate the stress field?','Recalculate?','yes','no','yes');
+% if strcmp(answer,'yes')
     %% Calculate Stress-Field
 
     % Calculate stress using FTTC
@@ -113,20 +113,20 @@ if strcmp(answer,'yes')
     TFMdata2.SMAG = Stress_mag;
     TFMdata2.SED = StrainEnergyDensity;
     TFMdata2.StrainEnergy = StrainEnergy;
-else
-    TFMdata2.Vqx = bsxfun(@times,TFMdata2.SF,PolyMaskV);
-    TFMdata2.SMAG = bsxfun(@times,TFMdata2.SF,PolyMaskV);
-    %% Calculate Strain-energy density
-    StrainEnergyDensity = zeros(size(TFMdata2.Vqx));
-    nF = size(TFMdata2.Vqx,3);
-    StrainEnergy = zeros(nF,1);
-    for f=1:nF
-        StrainEnergyDensity(:,:,f) = TFMdata2.PX_SCALE*0.5*real(TFMdata2.SF(:,:,1,f).*TFMdata2.Vqx(:,:,f)+TFMdata2.SF(:,:,2,f).*TFMdata2.Vqy(:,:,f));
-        StrainEnergy(f) = sum(sum(StrainEnergyDensity(:,:,f)))*TFMdata2.dx*TFMdata2.dy;
-    end
-    TFMdata2.SED = StrainEnergyDensity;
-    TFMdata2.StrainEnergy = StrainEnergy;
-end
+% else
+%     TFMdata2.Vqx = bsxfun(@times,TFMdata2.SF,PolyMaskV);
+%     TFMdata2.SMAG = bsxfun(@times,TFMdata2.SF,PolyMaskV);
+%     %% Calculate Strain-energy density
+%     StrainEnergyDensity = zeros(size(TFMdata2.Vqx));
+%     nF = size(TFMdata2.Vqx,3);
+%     StrainEnergy = zeros(nF,1);
+%     for f=1:nF
+%         StrainEnergyDensity(:,:,f) = TFMdata2.PX_SCALE*0.5*real(TFMdata2.SF(:,:,1,f).*TFMdata2.Vqx(:,:,f)+TFMdata2.SF(:,:,2,f).*TFMdata2.Vqy(:,:,f));
+%         StrainEnergy(f) = sum(sum(StrainEnergyDensity(:,:,f)))*TFMdata2.dx*TFMdata2.dy;
+%     end
+%     TFMdata2.SED = StrainEnergyDensity;
+%     TFMdata2.StrainEnergy = StrainEnergy;
+% end
 
 %% Plot SE
 hSE = figure();

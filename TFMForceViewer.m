@@ -23,6 +23,8 @@ function [hFig,hAx,hFig_hist,hAx_hist] = TFMForceViewer(TFMdata,varargin)
 %   'StrainColor',rgb or color strings specifying default strain vect color
 %   'SMAGLim',[low,high']/string: Specify color limits for |Stress| map
 %   'SMAGColor',rgb: color overlay for |Stress| map
+%   'StrainScale',double: factor by which to scale strain vectors (relative
+%                         to pixel size)
 
 %% Parse Inputs
 p = inputParser;
@@ -31,6 +33,7 @@ addParameter(p,'MoviePath',[]);
 addParameter(p,'CloseAfterSave',true);
 addParameter(p,'CellImageCLim','average');
 addParameter(p,'PlotStrain',true);
+addParameter(p,'StrainScale',2);
 addParameter(p,'StrainColor',[255,215,0]/255,...
     @(x) ischar(x)&&...
     any(strcmpi(x,{'r','c','k','b','y','w','m','g','yellow','magenta','cyan','red','green','blue','white','black'}))...
@@ -80,8 +83,8 @@ dH = TFMdata.dy/TFMdata.PX_SCALE;
 
 %Convert SMAG stack to anim struct
 olAnim(size(TFMdata.SMAG,3)) = struct('AlphaData',[],'XData',[],'YData',[]);
-[olAnim.XData] = deal([dW/2, dW*(size(TFMdata.SMAG,2)-1)-dW/2]);
-[olAnim.YData] = deal([dH/2, dH*(size(TFMdata.SMAG,1)-1)-dH/2]);
+[olAnim.XData] = deal([TFMdata.Vxx(1,1), TFMdata.Vxx(1,end)]+dW/2);
+[olAnim.YData] = deal([TFMdata.Vyy(1,1), TFMdata.Vyy(end,1)]+dH/2);
 for n=1:size(TFMdata.SMAG,3)
     olAnim(n).AlphaData = TFMdata.SMAG(:,:,n);
 end
@@ -102,8 +105,8 @@ hold(hAx,'on');
 if p.Results.PlotStrain
     hQvr = quiver(reshape(TFMdata.Vxx+dW/2,[],1),...
                 reshape(TFMdata.Vyy+dH/2,[],1),...
-                reshape(TFMdata.Vqx(:,:,1),[],1),...
-                reshape(TFMdata.Vqx(:,:,1),[],1),...
+                p.Results.StrainScale*reshape(TFMdata.Vqx(:,:,1),[],1),...
+                p.Results.StrainScale*reshape(TFMdata.Vqx(:,:,1),[],1),...
                 0,'-','color',p.Results.StrainColor,...
                 'LineWidth',1.5);
     legend(hAx,hQvr,'Strain');
@@ -201,8 +204,8 @@ function FrameChange(~,~,f)
     %set(hCnt,'XData',TFMdata.cnt{1}(:,1),...
     %         'YData',TFMdata.cnt{1}(:,2));
     if p.Results.PlotStrain
-        set(hQvr,'UData',reshape(TFMdata.Vqx(:,:,f),[],1),...
-                 'VData',reshape(TFMdata.Vqy(:,:,f),[],1));
+        set(hQvr,'UData',p.Results.StrainScale*reshape(TFMdata.Vqx(:,:,f),[],1),...
+                 'VData',p.Results.StrainScale*reshape(TFMdata.Vqy(:,:,f),[],1));
     end
     
     set(hTS,'String',sprintf('Time: %04.01f min',(TFMdata.Time(f,1)-TFMdata.Time(1,1))/60));
