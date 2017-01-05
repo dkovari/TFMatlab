@@ -1,11 +1,11 @@
 Path = 'C:\Users\dkovari\Desktop\explant\20161209explant\MO';
-File = 'sample002.nd2';
-RefFile = 'sample002sds.nd2';
+File = 'sample005.nd2';
+RefFile = 'sample005sds.nd2';
 [~,name,~] = fileparts(File);
 OutDir = fullfile(Path,name);
 mkdir(OutDir);
 
-Series = [1:4];
+Series = [1:3];
 
 BeadChan = 2;
 CellChan = 1;

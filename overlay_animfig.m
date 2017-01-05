@@ -1,4 +1,4 @@
-function [hFig,hAx,hCB] = overlay_animfig(Base,Over,varargin)
+function [hFig,hAx,hCB,hImages] = overlay_animfig(Base,Over,varargin)
 % Overlay an AlphaMap "movie" on top of a ColorMapped "movie"
 % This view utilizes composit_anigfig(...)
 %
@@ -17,7 +17,7 @@ function [hFig,hAx,hCB] = overlay_animfig(Base,Over,varargin)
 %
 % Parameters:
 %   'colormap': colormap to use for Base images
-%   'CLim': colorlims to use when applying colormap (see composit_animfig)
+%   'CLim': colorlims to use when applying colormap to base image
 %   'ALim': Alim of axes
 %       'auto': use the default values (scales to match image extents)
 %       'global': use max/min for all frames in Over
@@ -36,7 +36,7 @@ p.CaseSensitive = false;
 addParameter(p,'colormap','gray',@(x) ischar(x)||isnumeric(x)&&(size(x,2)==3));
 addParameter(p,'OverlayColor',[1,0,0], @(x) isnumeric(x)&&numel(x)==3);
 addParameter(p,'ALim','global',@(x) ischar(x)&&any(strcmpi(x,{'auto','global','average'}))||isnumeric(x)&&numel(x)==2);
-addParameter(p,'CLim','global',@(x) ischar(x)&&any(strcmpi(x,{'direct','scaled','global','average'}))||isnumeric(x)&&numel(x)==2);
+addParameter(p,'CLim','global',@(x) ischar(x)&&any(strcmpi(x,{'global','average'}))||isnumeric(x)&&numel(x)==2);
 addParameter(p,'Figure',[],@(x) isempty(x)||ishghandle(x));
 addParameter(p,'frameupdate_fn',[],@(x) isempty(x)||isa(x,'function_handle'));
 
@@ -96,16 +96,46 @@ AExt = [min(Alow),max(Ahigh)];
 % All overdata should be scaled to the alphamap
 [Over.AlphaDataMapping] = deal('scaled');
 
+%% Setup colorscale limits
+if ischar(p.Results.CLim)
+    
+    if isstruct(Base)
+        CL = zeros(numel(Base),2);
+        for n=1:numel(Base)
+            if ndims(Base(n).CData)<3
+                CL(n,1) = nanmin(Base(n).CData(:));
+                CL(n,2) = nanmax(Base(n).CData(:));
+            else
+                CL(n,:) = NaN;
+            end
+        end
+    elseif ndims(Base)<4 %Base is a 3d matrix
+        CL = zeros(size(Base,3),2);
+        CL(:,1) = nanmin(nanmin(Base,[],2),[],1);
+        CL(:,2) = nanmax(nanmax(Base,[],2),[],1);
+    end
+    switch lower(p.Results.CLim)     
+        case 'global'
+            CLIM = [nanmin(CL(:,1)),nanmax(CL(:,2))];
+        case 'average'
+            CLIM = nanmean(CL,1);
+    end
+else
+    CLIM = p.Results.CLim;
+end
 %% Create AnimFig
-[hFig,hAx,~,hCB] = composit_animfig(Base,Over,...
+[hFig,hAx,hImages,hCB] = composit_animfig(Base,Over,...
                             'colormap',p.Results.colormap,...
-                            'CLim',p.Results.CLim,...
+                            'CLim','manual',...%p.Results.CLim,...
                             'Figure',p.Results.Figure,...
                             'frameupdate_fn',@FrameUpdateFcn,...
                             'ShowColorbar',true,...
                             'ColorbarWidth',20,...
                             'PreSaveFcn',@PreSaveAnim,...
                             'PostSaveFcn',@PostSaveAnim);
+%% Set CLim to proper value
+set(hAx,'CLim',CLIM);
+
 %% Setup ALim
 if isnumeric(ALim)
     set(hAx,'ALim',ALim);

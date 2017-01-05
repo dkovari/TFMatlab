@@ -80,7 +80,7 @@ function [hFig,hAx,hImages,hCB] = composit_animfig(FrameData,varargin)
 p = inputParser();
 p.CaseSensitive = false;
 addParameter(p,'colormap','gray',@(x) ischar(x)||isnumeric(x)&&(size(x,2)==3));
-addParameter(p,'CLim','direct',@(x) ischar(x)&&any(strcmpi(x,{'direct','scaled','global','average'}))||isnumeric(x)&&numel(x)==2);
+addParameter(p,'CLim','direct',@(x) ischar(x)&&any(strcmpi(x,{'direct','scaled','global','average','manual'}))||isnumeric(x)&&numel(x)==2);
 addParameter(p,'frameupdate_fn',[],@(x) isempty(x)||isa(x,'function_handle'));
 addParameter(p,'Figure',[],@(x) isempty(x)||ishghandle(x));
 addParameter(p,'appdata',struct(),@isstruct);
@@ -283,7 +283,9 @@ for f = 1:numel(FrameData)
             if ischar(FrameData{f}(n).CDataMapping)
                 switch lower(FrameData{f}(n).CDataMapping)
                     case 'direct'
-                        
+                        %do nothing
+                    case 'manual'
+                        %do nothing
                     case 'scaled'
                         FrameData{f}(n).CDataMapping = [FrameData{f}(n).Ilow,FrameData{f}(n).Ihigh];
                     case 'global'
@@ -494,7 +496,11 @@ end
 end
 
 function AnimateFigure(hFig, movfilepath)
+%% disable resize
+fRsz = get(hFig,'Resize');
+set(hFig,'Resize','off');
 
+%% get appdata, apply presave fcn
 PreSaveFcn = getappdata(hFig,'PreSaveFcn');
 
 if ~isempty(PreSaveFcn)
@@ -554,7 +560,6 @@ open(writerObj);
 writeVideo(writerObj,Anim);
 close(writerObj);
 
-
 %% recreate controls
 set(hFig,'units','characters');
 fpos = get(hFig,'position');
@@ -591,4 +596,6 @@ if ~isempty(PostSaveFcn)
     PostSaveFcn();
 end
 
+%% re-enable resize
+set(hFig,'Resize',fRsz);
 end

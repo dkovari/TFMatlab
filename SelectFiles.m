@@ -3,7 +3,9 @@ d = [];
 FilePath = {};
 while f~=0
     [f,d] = uigetfile([d,'*.mat']);
-    FilePath = [FilePath,fullfile(d,f)];
+    if f~=0
+        FilePath = [FilePath,fullfile(d,f)];
+    end
 end
 
 %%

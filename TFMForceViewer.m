@@ -1,4 +1,4 @@
-function TFMForceViewer(TFMdata,varargin)
+function [hFig,hAx,hFig_hist,hAx_hist] = TFMForceViewer(TFMdata,varargin)
 %Traction Force Viewer
 % Syntax:
 %   If no arguments are specified the user is propmpted to open a saved
@@ -30,7 +30,7 @@ p.CaseSensitive = false;
 addParameter(p,'MoviePath',[]);
 addParameter(p,'CloseAfterSave',true);
 addParameter(p,'CellImageCLim','average');
-addParameter(p,'PlotStrain',false);
+addParameter(p,'PlotStrain',true);
 addParameter(p,'StrainColor',[255,215,0]/255,...
     @(x) ischar(x)&&...
     any(strcmpi(x,{'r','c','k','b','y','w','m','g','yellow','magenta','cyan','red','green','blue','white','black'}))...
@@ -55,16 +55,25 @@ if nargin<1||isempty(TFMdata)
 end
 
 if ischar(TFMdata) %TFMdata is a string specifying a file
-    TFMdata = load(TFMdata);
+    mFile = matfile(TFMdata,'Writable',false);
+    details = whos(mFile);
+    fields = {'Time','Ostack','Vxx','Vyy','Vqx','Vqy','SF','dx','dy','E','v','PX_SCALE','SMAG'};
+    if ~all(strcmpset(fields,{details.name}))
+        erfld = fields(~strcmpset(fields,{details.name}));
+        error('Specified File is missing field: %s\n',erfld{:});
+    end
+    TFMdata = mFile;
+else
+
+    %% Validate TFMdata
+    fields = {'Time','Ostack','Vxx','Vyy','Vqx','Vqy','SF','dx','dy','E','v','PX_SCALE','SMAG'};
+    if any( ~isfield(TFMdata,fields))
+        erfld = fields(~isfield(TFMdata,fields));
+        error('TFMdata Missing Field: %s\n',erfld{:});
+    end
 end
 
-%% Validate TFMdata
-fields = {'Time','Ostack','Vxx','Vyy','Vqx','Vqy','SF','dx','dy','E','v','PX_SCALE','SMAG'};
-if any( ~isfield(TFMdata,fields))
-    erfld = fields(~isfield(TFMdata,fields));
-    error('TFMdata Missing Field: %s\n',erfld{:});
-end
-
+%% Format for Overlay figure
 %number of image pixels corresponding to each point in SMAG
 dW = TFMdata.dx/TFMdata.PX_SCALE;
 dH = TFMdata.dy/TFMdata.PX_SCALE;
@@ -78,7 +87,7 @@ for n=1:size(TFMdata.SMAG,3)
 end
 
 %% Create the overlay figure
-[hFig,hAx,hCB] = overlay_animfig(TFMdata.Ostack,olAnim,...
+[hFig,hAx,hCB,hImages] = overlay_animfig(TFMdata.Ostack,olAnim,...
     'OverlayColor',p.Results.SMAGColor,...
     'CLim',p.Results.CellImageCLim,...
     'ALim',p.Results.SMAGLim,...
@@ -148,6 +157,45 @@ else
 end
 plot(SB_X,SB_Y,'-w','LineWidth',SB_WIDTH);
 
+%% Create CLim Hist window
+hFig_hist = figure('Name','Cell Image Histogram');
+hAx_hist = axes(hFig_hist);
+%find image intensity limits
+ostack_lim = [nanmin(nanmin(nanmin(TFMdata.Ostack,[],3),[],2),[],1),...
+                nanmax(nanmax(nanmax(TFMdata.Ostack,[],3),[],2),[],1)];
+
+%get hist data for first frame
+[Counts,edges] = histcounts(hImages(1).CData,'BinLimits',ostack_lim);
+[X,Y] = edges2stairs(edges,Counts);
+lY = log10(Y);
+lY(Y==0) = 0;
+hHistLine = plot(hAx_hist,X,lY,'-k','linewidth',1.5,'hittest','off');
+hold(hAx_hist,'on');
+xlim(hAx_hist,ostack_lim);
+YLIM = get(hAx_hist,'YLim');
+set(hAx_hist,'YLim',[0,YLIM(2)]);
+CL = get(hAx,'CLim');
+hL_low = plot(hAx_hist,[CL(1),CL(1)],[0,YLIM(2)],':k','linewidth',3);
+hL_up = plot(hAx_hist,[CL(2),CL(2)],[0,YLIM(2)],':k','linewidth',3);
+
+set(hL_low,'ButtonDownFcn',@(h,~) LowBtnDwn(h,hAx_hist,hAx));
+set(hL_up,'ButtonDownFcn',@(h,~) UpBtnDwn(h,hAx_hist,hAx));
+
+set(hAx_hist,...
+    'YTick',[],...
+    'Box','off',...
+    'TickDir','out');
+ylabel(hAx_hist,'Log_{10}(Count)');
+xlabel(hAx_hist,'Intensity');
+    function DelMainFig(h,~)
+        try
+            delete(hFig_hist);
+        catch
+        end
+        delete(h);
+    end
+set(hFig,'DeleteFcn',@DelMainFig);
+
 %% Animation Function
 function FrameChange(~,~,f)
     %set(hCnt,'XData',TFMdata.cnt{1}(:,1),...
@@ -157,7 +205,14 @@ function FrameChange(~,~,f)
                  'VData',reshape(TFMdata.Vqy(:,:,f),[],1));
     end
     
-    set(hTS,'String',sprintf('Time: %04.01f min',(TFMdata.Time(f)-TFMdata.Time(1))/60));
+    set(hTS,'String',sprintf('Time: %04.01f min',(TFMdata.Time(f,1)-TFMdata.Time(1,1))/60));
+    
+    %update intensity histogram
+    [C,E] = histcounts(hImages(1).CData,'BinLimits',ostack_lim);
+    [tX,tY] = edges2stairs(E,C);
+    tlY = log10(tY);
+    tlY(tY==0) = 0;
+    set(hHistLine,'xdata',tX,'ydata',tlY);
 end
 
 %% Write movie if needed
@@ -180,4 +235,38 @@ if ~isempty(p.Results.MoviePath)
     end
 end
 
+end
+
+function LowBtnDwn(h,hCB,hAx)
+set(gcf,'WindowButtonUpFcn',@RelFn);
+set(gcf,'WindowButtonMotionFcn',@MotFn)
+    function MotFn(~,~)
+        cp = hCB.CurrentPoint;
+        x = cp(1,1);
+        set(h,'xdata',[x,x]);
+    end
+    function RelFn(hF,~)
+        set(hF,'WindowButtonUpFcn',[]);
+        set(hF,'WindowButtonMotionFcn',[]);
+        CL = get(hAx,'CLim');
+        CL(1) = h.XData(1);
+        set(hAx,'CLim',CL);
+    end
+end
+
+function UpBtnDwn(h,hCB,hAx)
+set(gcf,'WindowButtonUpFcn',@RelFn);
+set(gcf,'WindowButtonMotionFcn',@MotFn)
+    function MotFn(~,~)
+        cp = hCB.CurrentPoint;
+        x = cp(1,1);
+        set(h,'xdata',[x,x]);
+    end
+    function RelFn(hF,~)
+        set(hF,'WindowButtonUpFcn',[]);
+        set(hF,'WindowButtonMotionFcn',[]);
+        CL = get(hAx,'CLim');
+        CL(2) = h.XData(1);
+        set(hAx,'CLim',CL);
+    end
 end

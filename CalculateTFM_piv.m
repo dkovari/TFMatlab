@@ -851,7 +851,6 @@ TFMdata.Vxx = Vxx;
 TFMdata.Vyy = Vyy;
 TFMdata.Vqx = Vqx;
 TFMdata.Vqy = Vqy;
-TFMdata.SF = StressField;
 TFMdata.dx = dx;
 TFMdata.dy = dy;
 TFMdata.dH = dH;
@@ -859,6 +858,7 @@ TFMdata.dW = dW;
 TFMdata.E = YoungE;
 TFMdata.v = PoissonV;
 TFMdata.PX_SCALE = PX_SCALE;
+TFMdata.SF = StressField;
 TFMdata.SMAG = Stress_mag;
 TFMdata.SED = StrainEnergyDensity;
 TFMdata.StrainEnergy = StrainEnergy;
@@ -874,8 +874,6 @@ if p.Results.SaveResults
     end
     if dat_file~=0
         hDlg = msgbox({'Saving Data','Please wait, this will take a while.'},'Saving...');
-
-
         savefast(fullfile(dat_path,dat_file),...
             '-struct',TFMdata);
         try
