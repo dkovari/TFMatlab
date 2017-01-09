@@ -68,6 +68,9 @@ PolyMaskV = imresize(PolyMask,size(TFMdata.Vxx),'nearest');
 TFMdata2.Vqx = bsxfun(@times,TFMdata.Vqx,PolyMaskV);
 TFMdata2.Vqy = bsxfun(@times,TFMdata.Vqy,PolyMaskV);
 
+%% Store mask data in file
+TFMdata2.PolyPos = PolyPos;
+
 %% Prompt to recalc stress
 % answer = questdlg('Do you want to recalculate the stress field?','Recalculate?','yes','no','yes');
 % if strcmp(answer,'yes')
@@ -131,9 +134,15 @@ TFMdata2.Vqy = bsxfun(@times,TFMdata.Vqy,PolyMaskV);
 %% Plot SE
 hSE = figure();
 plot((TFMdata.Time-TFMdata.Time(1))/60,StrainEnergy,'-r');
+
+%moving average
+M = movmean(StrainEnergy,5,'omitnan');
+hold on;
+hL = plot((TFMdata.Time-TFMdata.Time(1))/60,M,'--k');
 title('Strain Energy');
 ylabel('Strain Energy [J]');
 xlabel('Time [min]');
+legend(hL,'5-point moving average');
 
 %% Prompt to save data
 answer = questdlg('Do you want to save the data?','Save?','yes','no','yes');
