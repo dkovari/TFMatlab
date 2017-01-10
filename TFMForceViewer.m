@@ -31,7 +31,7 @@ p = inputParser;
 p.CaseSensitive = false;
 addParameter(p,'MoviePath',[]);
 addParameter(p,'CloseAfterSave',true);
-addParameter(p,'CellImageCLim','average');
+addParameter(p,'CellImageCLim',[675,1600]);%'average');
 addParameter(p,'PlotStrain',true);
 addParameter(p,'StrainScale',2);
 addParameter(p,'StrainColor',[255,215,0]/255,...
@@ -83,7 +83,6 @@ else
         error('TFMdata Missing Field: %s\n',erfld{:});
     end
 end
-
 %% Format for Overlay figure
 %number of image pixels corresponding to each point in SMAG
 dW = TFMdata.dx/TFMdata.PX_SCALE;
@@ -107,6 +106,7 @@ end
 ylabel(hCB,'|Stress| [Pa]');
 set(hAx,'XColor','none','YColor','none');
 set(hAx,'XTick',[],'YTick',[]);
+
 %% Draw Quivers and pointers
 hold(hAx,'on');
 %hCnt = plot(hAx,TFMdata.cnt{1}(:,1), TFMdata.cnt{1}(:,2),'+k','markersize',10);
@@ -116,7 +116,7 @@ if p.Results.PlotStrain
                 p.Results.StrainScale*reshape(TFMdata.Vqx(:,:,1),[],1),...
                 p.Results.StrainScale*reshape(TFMdata.Vqx(:,:,1),[],1),...
                 0,'-','color',p.Results.StrainColor,...
-                'LineWidth',1.5);
+                'LineWidth',2);
     legend(hAx,hQvr,'Strain');
 end
 %set axes limits to fit image, so that vectors dont cause scaling isues
@@ -124,13 +124,13 @@ xlim(hAx,[0,size(TFMdata.Ostack,2)]);
 ylim(hAx,[0,size(TFMdata.Ostack,1)]);
 %% Create TimeStamp & Scalebar
 FONT_UNITS = 'normalized';
-TIME_FONT_SIZE = 1/13;%26;
+TIME_FONT_SIZE = 1/18;%26;
 yloc = 0.99; %top of text (frac of axis)
 xloc = 0.01; %left of text (frac of axis)
 
 %location and size of scalebar
 %Scale bar size in px
-SB_FONT_SIZE = 1/16;%26;
+SB_FONT_SIZE = 1/18;%26;
 SB_LENGTH = 20; %µm
 SB_WIDTH = 6; %figure points
 PX_LENGTH = SB_LENGTH/(TFMdata.PX_SCALE/10^-6);
@@ -144,9 +144,11 @@ switch get(gca,'xdir')
     case 'normal'
         xloc = XLIM(1)+xloc*(XLIM(2)-XLIM(1));
         SB_X = XLIM(1)+SB_POS(1)*(XLIM(2)-XLIM(1)) + [0,PX_LENGTH];
+        SB_X_OL = SB_X + [-1,1];
     case 'reverse'
         xloc = XLIM(2)-xloc*(XLIM(2)-XLIM(1));
         SB_X = XLIM(2)-SB_POS(1)*(XLIM(2)-XLIM(1)) + [0,-PX_LENGTH];
+        SB_X_OL = SB_X - [-1,1];
 end
 switch get(gca,'ydir')
     case 'normal'
@@ -185,10 +187,11 @@ else
         'FontUnits',FONT_UNITS,...
         'FontSize',SB_FONT_SIZE);
 end
+plot(SB_X_OL,SB_Y,'-','color',p.Results.TextOutline,'LineWidth',SB_WIDTH+1);
 plot(SB_X,SB_Y,'-','color',p.Results.TextColor,'LineWidth',SB_WIDTH);
 
 %% Create CLim Hist window
-hFig_hist = figure('Name','Cell Image Histogram');
+hFig_hist = figure('Name','Cell Image Histogram','NumberTitle','off');
 hAx_hist = axes(hFig_hist);
 %find image intensity limits
 ostack_lim = [nanmin(nanmin(nanmin(TFMdata.Ostack,[],3),[],2),[],1),...
@@ -225,7 +228,10 @@ xlabel(hAx_hist,'Intensity');
         delete(h);
     end
 set(hFig,'DeleteFcn',@DelMainFig);
-
+title(hAx_hist,'Cell image intensity. Drag vertical lines to change contrast.');
+%% Move figures so they don't overlap
+movegui(hFig,'west');
+movegui(hAx_hist,'east');
 %% Animation Function
 function FrameChange(~,~,f)
     %set(hCnt,'XData',TFMdata.cnt{1}(:,1),...
@@ -244,7 +250,6 @@ function FrameChange(~,~,f)
     tlY(tY==0) = 0;
     set(hHistLine,'xdata',tX,'ydata',tlY);
 end
-
 %% Write movie if needed
 if ~isempty(p.Results.MoviePath)
     WriteFn = getappdata(hFig,'ExecuteMovie_Fn');

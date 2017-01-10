@@ -154,10 +154,13 @@ lX(X==0) = 0;
 hHistLine = plot(hCB,lX,Y,'-k','linewidth',1.5,'hittest','off');
 hold(hCB,'on');
 
+%create image for colorscale
+AL = get(hAx,'ALim');
 XLIM = get(hCB,'XLim');
-ylim(hCB,AExt);
+EXT = [min(AExt(1),AL(1)),max(AExt(2),AL(2))]; %extents of the colorscale
+ylim(hCB,EXT); %set colorscal extents
 cb_cdata = repmat(reshape(p.Results.OverlayColor,1,1,[]),200,1);
-cb_adata = linspace(AExt(1),AExt(2),200)';
+cb_adata = linspace(EXT(1),EXT(2),200)';
 hImCB = image(hCB,'CData',cb_cdata,...
     'AlphaData',cb_adata,...
     'AlphaDataMapping','scaled',...
@@ -167,13 +170,13 @@ hImCB = image(hCB,'CData',cb_cdata,...
 
 axis(hCB,'tight');
 set(hCB,'XLim',[0,XLIM(2)]);
-uistack(hImCB,'down');
+uistack(hImCB,'down'); %move image to back
 
-AL = get(hAx,'ALim');
+% create high/low  level lines
 hL_low = plot(hCB,[0,XLIM(2)],[AL(1),AL(1)],':k','linewidth',3);
 hL_up = plot(hCB,[0,XLIM(2)],[AL(2),AL(2)],':k','linewidth',3);
 
-set(hCB,'ALim',AL);
+set(hCB,'ALim',AL); %set alim of colorscale equal to hAx so that the gradients match
 
 set(hL_low,'ButtonDownFcn',@(h,~) LowBtnDwn(h,hCB,hAx,hImCB));
 set(hL_up,'ButtonDownFcn',@(h,~) UpBtnDwn(h,hCB,hAx,hImCB));
