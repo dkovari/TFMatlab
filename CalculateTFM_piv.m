@@ -712,6 +712,7 @@ parpool(feature('numCores'));
 catch
 end
 parfor_progress(nF);
+
 parfor f=1:nF
     [vqx,vqy] = piv_rec(Iref,Bstack(:,:,f),'startW',dW2*2,'startH',dH2*2,'endW',dW2,'endH',dH2);
     
