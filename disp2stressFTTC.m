@@ -23,7 +23,7 @@ function [Sx,Sy,Skx,Sky,kxx,kyy,M] = disp2stressFTTC(Ux,Uy,dx,dy,E,v)
 %            calculation. Useful for calculating stress moments
 %   kxx,kyy: wave-vectors overwhich Skx,Sky are evaluated
 % ************************************************************************
-% This calculation is based on the FTTC methods presented in"
+% This calculation is based on the FTTC methods presented in
 % Butler, et al. "Traction fields, moments and strain energy that cells
 % exert on their surroundings." American Journal of Physiology: Cell
 % Physiology, (2002) Vol 282, Iss. 3 pp 595-605

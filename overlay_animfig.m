@@ -165,7 +165,7 @@ hImCB = image(hCB,'CData',cb_cdata,...
     'AlphaData',cb_adata,...
     'AlphaDataMapping','scaled',...
     'XData',[0,XLIM(2)],...
-    'YData',AExt,...
+    'YData',EXT,...
     'HitTest','off');
 
 axis(hCB,'tight');
@@ -204,15 +204,27 @@ xlabel(hCB,'Log_{10}(Count)');
     end
 
     function PreSaveAnim()
-        ylim(hCB,get(hAx,'ALim'));
+        al = get(hAx,'ALim');
+        ylim(hCB,al);
+        
+        set(hImCB,'AlphaData',linspace(al(1),al(2),200)','YData',al);
+        set(hCB,'ALim',al);
+
         set(hHistLine,'visible','off');
         set(hL_low,'visible','off');
         set(hL_up,'visible','off');
-        xlabel(hCB,'Log_{10}(Count)');
+        try
         delete(hCB.XLabel);
+        catch
+        end
     end
     function PostSaveAnim()
-        ylim(hCB,AExt);
+        al = get(hAx,'ALim');
+        EXT = [min(AExt(1),al(1)),max(AExt(2),al(2))]; %extents of the colorscale
+        ylim(hCB,EXT);
+        set(hImCB,'AlphaData',linspace(EXT(1),EXT(2),200)',...
+            'YData',EXT);
+        set(hCB,'alim',al);
         set(hHistLine,'visible','on');
         set(hL_low,'visible','on');
         set(hL_up,'visible','on');

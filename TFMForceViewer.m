@@ -21,8 +21,12 @@ function [hFig,hAx,hFig_hist,hAx_hist] = TFMForceViewer(TFMdata,varargin)
 %                               'global' to automatically determine limits
 %   'PlotStrain',false/true: plot vectors indicating gel strain
 %   'StrainColor',rgb or color strings specifying default strain vect color
-%   'SMAGLim',[low,high']/string: Specify color limits for |Stress| map
-%   'SMAGColor',rgb: color overlay for |Stress| map
+%   'MapData',str:  data to use for the color overlay
+%                   'StressMag': (default) Overlay |Stress|
+%                   'StrainEnergyDensity': Overlay Strain Energy Density
+%                   'none': no overlay
+%   'MapLim',[low,high']/string: Specify color limits for |Stress| map
+%   'MapColor',rgb: color overlay for |Stress| map
 %   'StrainScale',double: factor by which to scale strain vectors (relative
 %                         to pixel size)
 
@@ -38,8 +42,9 @@ addParameter(p,'StrainColor',[255,215,0]/255,...
     @(x) ischar(x)&&...
     any(strcmpi(x,{'r','c','k','b','y','w','m','g','yellow','magenta','cyan','red','green','blue','white','black'}))...
     ||isnumeric(x)&&numel(x)==3&&all(x<=1)&&all(x>=0));
-addParameter(p,'SMAGLim','global');
-addParameter(p,'SMAGColor',[1,0,0],@(x) isnumeric(x)&&numel(x)==3&&all(x<=1)&&all(x>=0));
+addParameter(p,'MapData','StressMag',@(x) any(strcmpi(x,{'StressMag','StrainEnergyDensity','none'})));
+addParameter(p,'MapLim','global');
+addParameter(p,'MapColor',[1,0,0],@(x) isnumeric(x)&&numel(x)==3&&all(x<=1)&&all(x>=0));
 addParameter(p,'FigureSize',[],@(x) isempty(x)||isnumeric(x)&&numel(x)==2);
 addParameter(p,'TextColor','w',...
     @(x) ischar(x)&&...
@@ -88,24 +93,49 @@ end
 dW = TFMdata.dx/TFMdata.PX_SCALE;
 dH = TFMdata.dy/TFMdata.PX_SCALE;
 
-%Convert SMAG stack to anim struct
-olAnim(size(TFMdata.SMAG,3)) = struct('AlphaData',[],'XData',[],'YData',[]);
-[olAnim.XData] = deal([TFMdata.Vxx(1,1), TFMdata.Vxx(1,end)]+dW/2);
-[olAnim.YData] = deal([TFMdata.Vyy(1,1), TFMdata.Vyy(end,1)]+dH/2);
-for n=1:size(TFMdata.SMAG,3)
-    olAnim(n).AlphaData = TFMdata.SMAG(:,:,n);
+%% Create the animated figure
+switch lower(p.Results.MapData)
+    case 'none'
+        [hFig,hAx,hImages] = composit_animfig(TFMdata.Ostack,...
+        'ShowColorbar',false,...
+        'CLim',p.Results.CellImageCLim,...
+        'colormap',gray(512),...
+        'frameupdate_fn',@FrameChange);
+    case 'stressmag'
+        %Convert SMAG stack to anim struct
+        olAnim(size(TFMdata.SMAG,3)) = struct('AlphaData',[],'XData',[],'YData',[]);
+        [olAnim.XData] = deal([TFMdata.Vxx(1,1), TFMdata.Vxx(1,end)]+dW/2);
+        [olAnim.YData] = deal([TFMdata.Vyy(1,1), TFMdata.Vyy(end,1)]+dH/2);
+        for n=1:size(TFMdata.SMAG,3)
+            olAnim(n).AlphaData = TFMdata.SMAG(:,:,n);
+        end
+        [hFig,hAx,hCB,hImages] = overlay_animfig(TFMdata.Ostack,olAnim,...
+                                    'OverlayColor',p.Results.MapColor,...
+                                    'CLim',p.Results.CellImageCLim,...
+                                    'ALim',p.Results.MapLim,...
+                                    'colormap',gray(512),...
+                                    'frameupdate_fn',@FrameChange);
+        ylabel(hCB,'|Stress| [Pa]');
+        set(hAx,'XColor','none','YColor','none');
+        set(hAx,'XTick',[],'YTick',[]);
+    case 'strainenergydensity'
+        %Convert SED stack to anim struct
+        olAnim(size(TFMdata.SED,3)) = struct('AlphaData',[],'XData',[],'YData',[]);
+        [olAnim.XData] = deal([TFMdata.Vxx(1,1), TFMdata.Vxx(1,end)]+dW/2);
+        [olAnim.YData] = deal([TFMdata.Vyy(1,1), TFMdata.Vyy(end,1)]+dH/2);
+        for n=1:size(TFMdata.SED,3)
+            olAnim(n).AlphaData = TFMdata.SED(:,:,n);
+        end
+        [hFig,hAx,hCB,hImages] = overlay_animfig(TFMdata.Ostack,olAnim,...
+                                    'OverlayColor',p.Results.MapColor,...
+                                    'CLim',p.Results.CellImageCLim,...
+                                    'ALim',p.Results.MapLim,...
+                                    'colormap',gray(512),...
+                                    'frameupdate_fn',@FrameChange);
+        ylabel(hCB,'Strain Energy Density [J/m^2]');
+        set(hAx,'XColor','none','YColor','none');
+        set(hAx,'XTick',[],'YTick',[]);
 end
-
-%% Create the overlay figure
-[hFig,hAx,hCB,hImages] = overlay_animfig(TFMdata.Ostack,olAnim,...
-    'OverlayColor',p.Results.SMAGColor,...
-    'CLim',p.Results.CellImageCLim,...
-    'ALim',p.Results.SMAGLim,...
-    'colormap',gray(512),...
-    'frameupdate_fn',@FrameChange);
-ylabel(hCB,'|Stress| [Pa]');
-set(hAx,'XColor','none','YColor','none');
-set(hAx,'XTick',[],'YTick',[]);
 
 %% Draw Quivers and pointers
 hold(hAx,'on');
@@ -272,11 +302,12 @@ end
 
 end
 
-function LowBtnDwn(h,hCB,hAx)
+function LowBtnDwn(h,hHist,hAx)
+%function called when clicking histogram limit
 set(gcf,'WindowButtonUpFcn',@RelFn);
 set(gcf,'WindowButtonMotionFcn',@MotFn)
     function MotFn(~,~)
-        cp = hCB.CurrentPoint;
+        cp = hHist.CurrentPoint;
         x = cp(1,1);
         set(h,'xdata',[x,x]);
     end
@@ -289,11 +320,13 @@ set(gcf,'WindowButtonMotionFcn',@MotFn)
     end
 end
 
-function UpBtnDwn(h,hCB,hAx)
+function UpBtnDwn(h,hHist,hAx)
+%function called when clicking histogram limit
+
 set(gcf,'WindowButtonUpFcn',@RelFn);
 set(gcf,'WindowButtonMotionFcn',@MotFn)
     function MotFn(~,~)
-        cp = hCB.CurrentPoint;
+        cp = hHist.CurrentPoint;
         x = cp(1,1);
         set(h,'xdata',[x,x]);
     end

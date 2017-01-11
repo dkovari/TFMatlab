@@ -1,8 +1,83 @@
 function TFMdata = CalculateTFM(varargin)
 % Calculate Traction Force Data from ND2 Image files
-% 
+%   Strain Field is computed using PTV 
+%
 % Optional Arguments:
 %   'FilePath',string: Specify the ND2 file that should be loaded.
+% 	'SeriesNum',int
+% 	'CellChan',int
+% 	'BeadChan',int
+% 	'X_CROP',[int x1, int x2]
+%     'Y_CROP',[int y1, int y2]
+% 
+% 	'Reference','PATH TO FILE' or 'same'
+% 	'RefSeries',int
+% 	'RefChan',int
+% 	'RefFrame',int
+% 
+% 	'bpass_lnoise',int
+% 	'bpass_sz',int
+% 	'pkfnd_sz',int
+% 	,'pkfnd_th',double
+% 
+% 	'YoungE',double
+% 	'PoissonV',double
+% 
+% 	'SavePath','PATH TO OUTPUT'
+% 	'SaveResults',true/false
+% 
+% 	'ForceMoviePath','PATH TO MOVIE'
+% 
+% 	'RelativeDisplacementOnly',false/true
+% 	'MaxDisplacement',int
+%
+% 	'SaveSE',true/false: save plot of Strain Energy
+% 	'CellImageCLim','average'/'global',[low,high]
+% 	'MapLim','global'/'average',[low,high]
+% 	'PlotStrain',true/false
+%
+% Output:
+%   Unless directed not to save the data, the results are saved to a file
+%   specified by 'SavePath' or the user file selection prompt. The
+%   resulting matfile contains a struct:
+%   TFMdata
+%     TFMdata.Iref = Reference bead image used
+%     TFMdata.bpass_lnoise = size of noise used for filtering
+%     TFMdata.bpass_sz = particle size used for filtering
+%     TFMdata.cnt_sz = particle size used for identifying particles
+%     TFMdata.pkfnd_sz = particle size used for peak detection
+%     TFMdata.pkfnd_th = intensity min used for peak detection
+%     TFMdata.rF = reference frame number
+%     TFMdata.nF = number of frames
+%     TFMdata.RefFile = file used for reference
+%     TFMdata.ImageFile = file containing original image data
+%     TFMdata.SeriesNum = series used
+%     TFMdata.BeadChan = channel used for bead images
+%     TFMdata.CellChan = channel used for cell images
+%     TFMdata.Ostack = cell images in a 3-d stack
+%     TFMdata.imstack = bead images in a 3d stack
+%     TFMdata.Bstack = filtered bead images in a 3d stack
+%     TFMdata.Time = timepoints for each frame
+%     TFMdata.Y_CROP = crop used on original data [1st,last]
+%     TFMdata.X_CROP = crop used on original data [1st,last]
+%     TFMdata.cnt = cell array listig parcle centers (only first cell
+%                   contains data)
+%     TFMdata.Vxx = location of displacement vectors along x
+%     TFMdata.Vyy = location of displacement vectors along y
+%     TFMdata.Vqx = x-value of displacement vectors
+%     TFMdata.Vqy = y-value of displecement
+%     TFMdata.SF = StressField;
+%     TFMdata.dx = width of displacement/stress field windows in m
+%     TFMdata.dy = height of displacement/stress field windows in m
+%     TFMdata.dH = height of windows in pixels
+%     TFMdata.dW = width of windoes in pixels
+%     TFMdata.E = Youngs modulus of gel
+%     TFMdata.v = Poisson's ration of gel
+%     TFMdata.PX_SCALE = pixel scale (um/px)
+%     TFMdata.SMAG = magnitude of stress for each window
+%     TFMdata.SED = StrainEnergyDensity;
+%     TFMdata.StrainEnergy = StrainEnergy, scalar total energy exerted
+   
 
 %% Parse Inputs
 p = inputParser;
@@ -30,11 +105,15 @@ addParameter(p,'PoissonV',[]);
 addParameter(p,'SavePath',[]);
 addParameter(p,'SaveResults',true);
 
-addParameter(p,'BeadMoviePath',[]);
 addParameter(p,'ForceMoviePath',[]);
 
 addParameter(p,'RelativeDisplacementOnly',false);
 addParameter(p,'MaxDisplacement',20);
+
+addParameter(p,'SaveSE',true);
+addParameter(p,'CellImageCLim','average');
+addParameter(p,'MapLim','global');
+addParameter(p,'PlotStrain',true);
 
 parse(p,varargin{:});
 
@@ -823,10 +902,6 @@ for f=1:nF
     StrainEnergyDensity(:,:,f) = PX_SCALE*0.5*real(StressField(:,:,1,f).*Vqx(:,:,f)+StressField(:,:,2,f).*Vqy(:,:,f));
     StrainEnergy(f) = sum(sum(StrainEnergyDensity(:,:,f)))*dx*dy;
 end
-figure(1);
-clf;
-plot(1:nF,StrainEnergy,'-r');
-title('Strain Energy');
 
 %% Store Data in struct
 if ~USE_CELL_IMAGE
@@ -874,18 +949,6 @@ TFMdata.SMAG = Stress_mag;
 TFMdata.SED = StrainEnergyDensity;
 TFMdata.StrainEnergy = StrainEnergy;
 
-%% View TFM Data
-if isempty(p.Results.BeadMoviePath)
-    TFMBeadViewer(TFMdata);
-else
-    TFMBeadViewer(TFMdata,'MoviePath',p.Results.BeadMoviePath);
-end
-if isempty(p.Results.ForceMoviePath)
-    TFMForceViewer(TFMdata);
-else
-    TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath);
-end
-
 %% Save Data
 if p.Results.SaveResults
     [~,name,~] = fileparts(File);
@@ -897,8 +960,6 @@ if p.Results.SaveResults
     end
     if dat_file~=0
         hDlg = msgbox({'Saving Data','Please wait, this will take a while.'},'Saving...');
-
-
         savefast(fullfile(dat_path,dat_file),...
             '-struct',TFMdata);
         try
@@ -908,6 +969,24 @@ if p.Results.SaveResults
     end   
 end
 
+%% Plot SE
+if p.Results.SaveResults && p.Results.SaveSE
+    hSE = figure();
+    plot((TFMdata.Time-TFMdata.Time(1))/60,StrainEnergy,'-r');
+    title('Strain Energy');
+    ylabel('Strain Energy []');
+    xlabel('Time [min]');
+    
+    [~,f,~] = fileparts(dat_file);
+    saveas(hSE,fullfile(dat_path,[f,'_StrainEnergy.fig']));
+    close(hSE);
+end
+%% View TFM Data
+if isempty(p.Results.ForceMoviePath)
+    TFMForceViewer(TFMdata,'CellImageCLim',p.Results.CellImageCLim,'MapLim',p.Results.MapLim,'PlotStrain',p.Results.PlotStrain,'FigureSize',[1080,720]);
+else
+    TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath,'CellImageCLim',p.Results.CellImageCLim,'MapLim',p.Results.MapLim,'PlotStrain',p.Results.PlotStrain,'FigureSize',[1080,720]);
+end
 %% Clear data if no output
 if nargout<1
     clear TFMdata;

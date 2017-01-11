@@ -1,5 +1,6 @@
 function TFMdata = CalculateTFM_piv(varargin)
 % Calculate Traction Force Data from ND2 Image files
+%   Strain field is computed using PIV
 % 
 % Optional Arguments:
 %   'FilePath',string: Specify the ND2 file that should be loaded.
@@ -25,7 +26,6 @@ function TFMdata = CalculateTFM_piv(varargin)
 % 	'SavePath','PATH TO OUTPUT'
 % 	'SaveResults',true/false
 % 
-% 	'BeadMoviePath','PATH TO MOVIE'
 % 	'ForceMoviePath','PATH TO MOVIE'
 % 
 % 	'RelativeDisplacementOnly',false/true
@@ -33,7 +33,7 @@ function TFMdata = CalculateTFM_piv(varargin)
 %
 % 	'SaveSE',true/false: save plot of Strain Energy
 % 	'CellImageCLim','average'/'global',[low,high]
-% 	'SMAGLim','global'/'average',[low,high]
+% 	'MapLim','global'/'average',[low,high]
 % 	'PlotStrain',true/false
 %
 % Output:
@@ -61,7 +61,7 @@ function TFMdata = CalculateTFM_piv(varargin)
 %     TFMdata.Y_CROP = crop used on original data [1st,last]
 %     TFMdata.X_CROP = crop used on original data [1st,last]
 %     TFMdata.cnt = cell array listig parcle centers (only first cell
-%                   contains data
+%                   contains data)
 %     TFMdata.Vxx = location of displacement vectors along x
 %     TFMdata.Vyy = location of displacement vectors along y
 %     TFMdata.Vqx = x-value of displacement vectors
@@ -104,7 +104,6 @@ addParameter(p,'PoissonV',[]);
 addParameter(p,'SavePath',[]);
 addParameter(p,'SaveResults',true);
 
-addParameter(p,'BeadMoviePath',[]);
 addParameter(p,'ForceMoviePath',[]);
 
 addParameter(p,'RelativeDisplacementOnly',false);
@@ -112,9 +111,8 @@ addParameter(p,'MaxDisplacement',20);
 
 addParameter(p,'SaveSE',true);
 addParameter(p,'CellImageCLim','average');
-addParameter(p,'SMAGLim','global');
+addParameter(p,'MapLim','global');
 addParameter(p,'PlotStrain',true);
-
 
 parse(p,varargin{:});
 
@@ -896,15 +894,10 @@ if p.Results.SaveResults && p.Results.SaveSE
     close(hSE);
 end
 %% View TFM Data
-% if isempty(p.Results.BeadMoviePath)
-%     TFMBeadViewer(TFMdata);
-% else
-%     TFMBeadViewer(TFMdata,'MoviePath',p.Results.BeadMoviePath);
-% end
 if isempty(p.Results.ForceMoviePath)
-    TFMForceViewer(TFMdata,'CellImageCLim',p.Results.CellImageCLim,'SMAGLim',p.Results.SMAGLim,'PlotStrain',p.Results.PlotStrain,'FigureSize',[1080,720]);
+    TFMForceViewer(TFMdata,'CellImageCLim',p.Results.CellImageCLim,'MapLim',p.Results.MapLim,'PlotStrain',p.Results.PlotStrain,'FigureSize',[1080,720]);
 else
-    TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath,'CellImageCLim',p.Results.CellImageCLim,'SMAGLim',p.Results.SMAGLim,'PlotStrain',p.Results.PlotStrain,'FigureSize',[1080,720]);
+    TFMForceViewer(TFMdata,'MoviePath',p.Results.ForceMoviePath,'CellImageCLim',p.Results.CellImageCLim,'MapLim',p.Results.MapLim,'PlotStrain',p.Results.PlotStrain,'FigureSize',[1080,720]);
 end
 
 %% Clear data if no output
