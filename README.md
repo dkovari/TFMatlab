@@ -21,3 +21,5 @@ Type "help CalculateTFM" at the MATLAB prompt for details.
 Use this function to view previously processed TFM data. The resulting GUI tool can be used to step through individual frames of the sequence, and also save a movie.
 
 
+#Citing TFMatlab
+TFMatlab was initially presented in the suplementary materials of Kovari et al. (2016) Biophys J. 111:12 DOI:10.1016/j.bpj.2016.11.009. If you find this software helpful, please consider citing that paper.
