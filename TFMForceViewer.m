@@ -16,6 +16,7 @@ function [hFig,hAx,hFig_hist,hAx_hist] = TFMForceViewer(TFMdata,varargin)
 %   'MoviePath': Specify a path to save force map movie
 %   'CloseAfterSave',true/false: if true (default), the viewer is closed
 %                                after the movie is saved.
+%   'FigureSize': [W,H] of the figure (in pixels)
 %   'CellImageCLim',[low,high]: image intensity color limits for cell
 %                               images. Alternatively specify 'average' or
 %                               'global' to automatically determine limits

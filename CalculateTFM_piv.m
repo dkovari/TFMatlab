@@ -684,8 +684,6 @@ dW2 = 2^ceil(log2(dW2)); %use next larger power of 2 sized window (makes piv run
 
 dH2 = dW2;
 
-
-
 dW = dW2/2;
 dH = dH2/2;
 
