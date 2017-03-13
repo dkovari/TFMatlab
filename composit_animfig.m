@@ -61,7 +61,10 @@ function [hFig,hAx,hImages,hCB] = composit_animfig(FrameData,varargin)
 %       hEdt_Frame
 %       hTxt_Frame
 %       frameupdate_fn
-%       ExecuteMovie_Fn(filepath): function handle to save a movie
+%       ExecuteMovie_Fn(filepath,varargin): function handle to save a movie
+%           varargin parameters:
+%               'Quality',default=75    the compression quality
+%               'FrameRate',default=5   video frame rate
 %   Additional variables can be included in the appdata using the 'appdata'
 %   paramter
 %
@@ -367,7 +370,7 @@ setappdata(hFig,'PostSaveFcn',p.Results.PostSaveFcn);
 
 ReSzFig(hFig);
 
-setappdata(hFig,'ExecuteMovie_Fn',@(fp) AnimateFigure(hFig,fp));
+setappdata(hFig,'ExecuteMovie_Fn',@(fp,varargin) AnimateFigure(hFig,fp,varargin));
 end
 
 %% Resize Figure Function
@@ -495,7 +498,14 @@ if ~isempty(fcn)
 end
 end
 
-function AnimateFigure(hFig, movfilepath)
+function AnimateFigure(hFig, movfilepath,varargin)
+
+p=inputParser();
+p.CaseSensitive = false;
+addParameter(p,'Quality',75,@(x) isnumeric(x)&&isscalar(x)&&x>=0&&x<=100);
+addParameter(p,'FrameRate',5,@(x) isnumeric(x)&&isscalar(x));
+parse(p);
+
 %% disable resize
 fRsz = get(hFig,'Resize');
 set(hFig,'Resize','off');
@@ -554,8 +564,8 @@ end
 
 %% Save Movie
 writerObj = VideoWriter(fullfile(mov_path,mov_file),'MPEG-4');
-writerObj.FrameRate = 5;
-writerObj.Quality = 100;
+writerObj.FrameRate = p.Results.FrameRate;
+writerObj.Quality = p.Results.Quality;
 open(writerObj);
 writeVideo(writerObj,Anim);
 close(writerObj);

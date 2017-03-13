@@ -14,6 +14,8 @@ function [hFig,hAx,hFig_hist,hAx_hist] = TFMForceViewer(TFMdata,varargin)
 %
 % Parameters:
 %   'MoviePath': Specify a path to save force map movie
+%   'MovieQuality',[0,100] defult=75
+%   'MovieFrameRate',## default=5
 %   'CloseAfterSave',true/false: if true (default), the viewer is closed
 %                                after the movie is saved.
 %   'FigureSize': [W,H] of the figure (in pixels)
@@ -35,6 +37,8 @@ function [hFig,hAx,hFig_hist,hAx_hist] = TFMForceViewer(TFMdata,varargin)
 p = inputParser;
 p.CaseSensitive = false;
 addParameter(p,'MoviePath',[]);
+addParameter(p,'MovieQuality',75,@(x) isnumeric(x)&&isscalar(x)&&x>=0&&x<=100);
+addParameter(p,'MovieFrameRate',5,@(x) isnumeric(x)&&isscalar(x));
 addParameter(p,'CloseAfterSave',true);
 addParameter(p,'CellImageCLim',[675,1600]);%'average');
 addParameter(p,'PlotStrain',true);
@@ -292,7 +296,7 @@ if ~isempty(p.Results.MoviePath)
     else
         set(hFig,'units','pixels','position',[0,0,p.Results.FigureSize(1),p.Results.FigureSize(2)]);
     end
-    WriteFn(p.Results.MoviePath);
+    WriteFn(p.Results.MoviePath,'Quality',p.Results.MovieQuality,'FrameRate',p.Results.MovieFrameRate);
     if p.Results.CloseAfterSave
         delete(hFig);
         return;
