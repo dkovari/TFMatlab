@@ -120,7 +120,8 @@ switch lower(p.Results.MapData)
                                     'ALim',p.Results.MapLim,...
                                     'colormap',gray(512),...
                                     'frameupdate_fn',@FrameChange);
-        ylabel(hCB,'|Stress| [Pa]');
+        ylabel(hCB,'|Stress| [Pa]','FontSize',14);
+        set(hCB,'FontSize',12);
         set(hAx,'XColor','none','YColor','none');
         set(hAx,'XTick',[],'YTick',[]);
     case 'strainenergydensity'
@@ -137,7 +138,8 @@ switch lower(p.Results.MapData)
                                     'ALim',p.Results.MapLim,...
                                     'colormap',gray(512),...
                                     'frameupdate_fn',@FrameChange);
-        ylabel(hCB,'Strain Energy Density [J/m^2]');
+        ylabel(hCB,'Strain Energy Density [J/m^2]','FontSize',16);
+        set(hCB,'FontSize',14);
         set(hAx,'XColor','none','YColor','none');
         set(hAx,'XTick',[],'YTick',[]);
 end
