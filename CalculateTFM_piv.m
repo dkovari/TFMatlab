@@ -633,7 +633,9 @@ for f=1:nF
     %shift matrix, padd with zeros
     imstack(:,:,f) = shiftmat(imstack(:,:,f),-round([driftXY(1,2,f),driftXY(1,1,f)]),NaN);
     Bstack(:,:,f) = shiftmat(Bstack(:,:,f),-round([driftXY(1,2,f),driftXY(1,1,f)]),NaN);
-    Ostack(:,:,f) = shiftmat(Ostack(:,:,f),-round([driftXY(1,2,f),driftXY(1,1,f)]),'circ');
+    if USE_CELL_IMAGE
+        Ostack(:,:,f) = shiftmat(Ostack(:,:,f),-round([driftXY(1,2,f),driftXY(1,1,f)]),'circ');
+    end
     waitbar(f/nF,hWait);
 end
 try
