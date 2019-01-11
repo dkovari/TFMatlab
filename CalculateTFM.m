@@ -228,11 +228,16 @@ while first_loop||isnan(SeriesNum)||isnan(BeadChan)
     end
     
     if numSeries>1&&numChan>1
+        prevFigs = preview_NIS(fullfile(Dir,File));
         prom = {sprintf('Position Series (1-%d)',numSeries);...
                 sprintf('Bead Channel (1-%d)', numChan);...
                 sprintf('Cell Channel (1-%d)', numChan)};
         defAns = {sprintf('%d',SeriesNum);sprintf('%d',BeadChan);sprintf('%d',CellChan)};
         answer = inputdlg(prom,'Select Series and Channel',1,defAns);
+        try
+            delete(prevFigs)
+        catch
+        end
         
         if isempty(answer)
             bfreader.close()
