@@ -5,3 +5,6 @@
 *.asv
 *.m~
 parfor_progress.txt
+
+#WORD
+~$*.docx
